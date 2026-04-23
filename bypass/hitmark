@@ -1,0 +1,164 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Cleanup old UI
+local old = playerGui:FindFirstChild("TabHitmarkUI")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "TabHitmarkUI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(320, 120)
+main.Position = UDim2.new(0.5, -160, 0, 40)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.BorderSizePixel = 0
+main.ClipsDescendants = true
+main.Parent = gui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.Parent = main
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(55, 55, 65)
+mainStroke.Thickness = 1
+mainStroke.Parent = main
+
+local top = Instance.new("Frame")
+top.Name = "TopBar"
+top.Size = UDim2.new(1, 0, 0, 34)
+top.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+top.BorderSizePixel = 0
+top.Parent = main
+
+local topCorner = Instance.new("UICorner")
+topCorner.CornerRadius = UDim.new(0, 10)
+topCorner.Parent = top
+
+local topFill = Instance.new("Frame")
+topFill.Size = UDim2.new(1, 0, 0, 10)
+topFill.Position = UDim2.new(0, 0, 1, -10)
+topFill.BackgroundColor3 = top.BackgroundColor3
+topFill.BorderSizePixel = 0
+topFill.Parent = top
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Position = UDim2.fromOffset(12, 0)
+title.BackgroundTransparency = 1
+title.Text = "Renz bypass | https://discord.gg/njSSMX8s"
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 14
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = top
+
+local btnHolder = Instance.new("Frame")
+btnHolder.Size = UDim2.fromOffset(70, 24)
+btnHolder.Position = UDim2.new(1, -75, 0.5, -12)
+btnHolder.BackgroundTransparency = 1
+btnHolder.Parent = top
+
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+layout.Padding = UDim.new(0, 5)
+layout.Parent = btnHolder
+
+local function makeTopButton(text)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.fromOffset(28, 24)
+	b.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 14
+	b.TextColor3 = Color3.fromRGB(0,0,0)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 6)
+	c.Parent = b
+	b.Parent = btnHolder
+	return b
+end
+
+local minimizeBtn = makeTopButton("-")
+local closeBtn = makeTopButton("X")
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Size = UDim2.new(1, -20, 1, -54)
+content.Position = UDim2.fromOffset(10, 44)
+content.BackgroundTransparency = 1
+content.Parent = main
+
+local run = Instance.new("TextButton")
+run.Size = UDim2.new(1, 0, 0, 44)
+run.Position = UDim2.fromOffset(0, 10)
+run.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+run.Text = "Bypass"
+run.Font = Enum.Font.GothamBold
+run.TextSize = 15
+run.TextColor3 = Color3.fromRGB(0, 0, 0)
+run.Parent = content
+
+local runCorner = Instance.new("UICorner")
+runCorner.CornerRadius = UDim.new(0, 8)
+runCorner.Parent = run
+
+-- Dragging Logic
+local dragToggle, dragStart, startPos
+top.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragToggle = true
+		dragStart = input.Position
+		startPos = main.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
+		end)
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement and dragToggle then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+local function tween(obj, props)
+	TweenService:Create(obj, TweenInfo.new(0.15), props):Play()
+end
+
+minimizeBtn.MouseButton1Click:Connect(function()
+	local isMinimized = (main.Size.Y.Offset < 120)
+	tween(main, {Size = isMinimized and UDim2.fromOffset(320, 120) or UDim2.fromOffset(320, 34)})
+end)
+
+closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- Bypass Logic
+run.MouseButton1Click:Connect(function()
+    -- Delete from ReplicatedStorage
+    local rsTargets = {"Character", "StarterCharacter", "HDAdminSetup"}
+    for _, name in ipairs(rsTargets) do
+        local obj = ReplicatedStorage:FindFirstChild(name)
+        if obj then obj:Destroy() end
+    end
+
+    -- Delete from Workspace
+    local wsTarget = Workspace:FindFirstChild("HDAdminStarterCharacter")
+    if wsTarget then wsTarget:Destroy() end
+
+    run.Text = "Bypassed"
+    task.wait(1)
+    run.Text = "Bypass"
+end)
